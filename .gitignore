@@ -1,5 +1,4 @@
 # Build outputs
-build/
 out/
 dist/
 cmake-build-*/
@@ -91,7 +90,6 @@ __pycache__/
 *$py.class
 *.so
 .Python
-build/
 develop-eggs/
 dist/
 downloads/
