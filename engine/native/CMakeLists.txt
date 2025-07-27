@@ -4,10 +4,4 @@ list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/../../cmake")
 
 project(Native)
 
-include(lib)
-
-add_library(TestLib SHARED
-    test.cpp
-)
-
-install_library(TestLib testlib)
+add_subdirectory(os)

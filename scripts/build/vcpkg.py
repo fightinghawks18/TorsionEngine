@@ -7,6 +7,7 @@ from enum import Enum
 from pathlib import Path
 
 PROJECT_ROOT = Path(__file__).parents[2]
+CXXSOURCE_FOLDER = PROJECT_ROOT / "engine" / "native"
 
 class VTriplet(Enum):
     # Windows triplets
@@ -142,6 +143,10 @@ def build_packages(triplet: VTriplet = VTriplet.NONE) -> bool:
     # Set env variables to allow parallel builds
     env = os.environ.copy()
     env["VCPKG_MAX_CONCURRENCY"] = str(cores_used)
+
+    # Move to cxx source folder as it has the vcpkg.json
+
+    os.chdir(CXXSOURCE_FOLDER)
     
     # Build packages
     result = subprocess.run([

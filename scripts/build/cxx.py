@@ -8,7 +8,7 @@ from enum import Enum
 from pathlib import Path
 
 PROJECT_ROOT = Path(__file__).parents[2]
-CXXSOURCE_DIR = PROJECT_ROOT / "engine" / "native"
+CXXSOURCE_FOLDER = PROJECT_ROOT / "engine" / "native"
 
 class CXXBuildConfig(Enum):
     DEBUG = "Debug"
@@ -162,7 +162,7 @@ def compile(out_dir: Path,
     configure_cmd = [
         "cmake",
         "-G", "Ninja",
-        "-S", str(CXXSOURCE_DIR),
+        "-S", str(CXXSOURCE_FOLDER),
         "-B", str(cxxout_dir),
         f"-DCMAKE_BUILD_TYPE={config.value}",
         f"-DCMAKE_C_COMPILER={c_compiler}",

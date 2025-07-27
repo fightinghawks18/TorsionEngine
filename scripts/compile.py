@@ -66,7 +66,7 @@ def compile():
         if not cs_installation_res:
             raise AssertionError("Failed to install C# components...")
     except AssertionError as err:
-        print(f"Torsion failed to finish compilation because {err}")
+        print(f"Torsion failed to finish compilation: {err}")
     else:
         print(f"Torsion successfully compiled project to {BUILD_DIRECTORY} and packaged it into {PACKAGE_DIRECTORY}.")
         did_compilation_succeed = True
