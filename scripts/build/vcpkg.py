@@ -6,7 +6,7 @@ import subprocess
 from enum import Enum
 from pathlib import Path
 
-PROJECT_ROOT = Path(__file__).parents[3]
+PROJECT_ROOT = Path(__file__).parents[2]
 
 class VTriplet(Enum):
     # Windows triplets
@@ -137,7 +137,7 @@ def build_packages(triplet: VTriplet = VTriplet.NONE) -> bool:
     else:
         cores_used = max(1, cpu_cores - 1) # Use one less core
 
-    print(f"Installing vcpkg packages with {cores_used} cores from platform {host_triplet} to {triplet} platform.")
+    print(f"Installing vcpkg packages with {cores_used} cores from platform {host_triplet.value} to {triplet.value} platform.")
 
     # Set env variables to allow parallel builds
     env = os.environ.copy()

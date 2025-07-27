@@ -7,7 +7,7 @@ import subprocess
 from enum import Enum
 from pathlib import Path
 
-PROJECT_ROOT = Path(__file__).parents[3]
+PROJECT_ROOT = Path(__file__).parents[2]
 CXXSOURCE_DIR = PROJECT_ROOT / "engine" / "native"
 
 class CXXBuildConfig(Enum):
@@ -111,7 +111,7 @@ def clean(out_dir: Path):
 
 def compile(out_dir: Path, 
                 config: CXXBuildConfig = CXXBuildConfig.DEBUG, 
-                compiler: CXXCompiler = CXXCompiler.CLANG,
+                compiler: CXXCompiler = CXXCompiler.MSVC,
                 target_platform: CXXPlatform = CXXPlatform.NONE,
                 target_arch: CXXArchitecture = CXXArchitecture.NONE) -> bool:
     """
@@ -147,7 +147,7 @@ def compile(out_dir: Path,
     # Get C and CXX compilers for the compiler type
     compilers = get_c_compilers(compiler)
     if compilers is None:
-        print(f"Attempted to search for {compiler} c and cxx compilers, failed to find a match. Please install these compilers again, or add them to PATH.")
+        print(f"Attempted to search for {compiler.value} c and cxx compilers, failed to find a match. Please install these compilers again, or add them to PATH.")
         return False
     
     c_compiler, cxx_compiler = compilers
@@ -161,6 +161,7 @@ def compile(out_dir: Path,
     # Configure CMake build
     configure_cmd = [
         "cmake",
+        "-G", "Ninja",
         "-S", str(CXXSOURCE_DIR),
         "-B", str(cxxout_dir),
         f"-DCMAKE_BUILD_TYPE={config.value}",
@@ -194,7 +195,6 @@ def compile(out_dir: Path,
     result = subprocess.run([
         "cmake",
         "--build", str(cxxout_dir),
-        "--config", config.value,
         "--parallel" # Helps with build times by using all available cores
     ])
     if result.returncode != 0:
@@ -238,18 +238,16 @@ def install(out_dir: Path, to_dir: Path) -> bool:
     """
 
     cxxout_folder = out_dir / "cmake"
-    if not cxxout_folder.exists(): # Avoid stale builds
-        print(f"C++ output folder at {cxxout_folder} exists, removing...")
 
     result = subprocess.run([
         "cmake",
-        "--install", str(out_dir),
+        "--install", str(cxxout_folder),
         "--prefix", str(to_dir)
-    ])
+    ], capture_output=True, text=True)
 
     if result.returncode != 0:
         print(f"CMake failed to install project to {to_dir}, {result.stderr}")
         return False
-    print(f"CMake successfully installed project to {cxxout_folder}")
+    print(f"CMake successfully installed project to {to_dir}")
     return True
     
