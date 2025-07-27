@@ -1,0 +1,13 @@
+{
+  "$schema": "https://raw.githubusercontent.com/Microsoft/vcpkg/master/scripts/vcpkg.schema.json",
+  "name": "torsionengine-native",
+  "version": "1.0.0",
+  "description": "torsionengine",
+  "dependencies": [
+    {
+        "name": "sdl3",
+        "features": [ "vulkan" ]
+    }
+  ],
+  "builtin-baseline": "b91c3336aee7f32412508f7dd351ae2cabdb8819"
+}
