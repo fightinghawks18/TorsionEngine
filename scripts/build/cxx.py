@@ -7,8 +7,7 @@ import subprocess
 from enum import Enum
 from pathlib import Path
 
-PROJECT_ROOT = Path(__file__).parents[2]
-CXXSOURCE_FOLDER = PROJECT_ROOT / "engine" / "native"
+from scripts import util
 
 class CXXBuildConfig(Enum):
     DEBUG = "Debug"
@@ -103,11 +102,9 @@ def get_host_platform() -> tuple[CXXPlatform, CXXArchitecture]:
 
 def clean(out_dir: Path):
     """Cleans the cmake folder at the specified directory"""
-
-    cxxout_dir = out_dir / "cmake"
-    if cxxout_dir.exists():
-        shutil.rmtree(cxxout_dir)
-        print(f"C++ output folder at {cxxout_dir} exists, removing...")
+    if out_dir.exists():
+        shutil.rmtree(out_dir)
+        print(f"C++ output folder at {out_dir} exists, removing...")
 
 def compile(out_dir: Path, 
                 config: CXXBuildConfig = CXXBuildConfig.DEBUG, 
@@ -153,17 +150,16 @@ def compile(out_dir: Path,
     c_compiler, cxx_compiler = compilers
     
     # Get CMake output folder
-    cxxout_dir = out_dir / "cmake"
     clean(out_dir)
 
-    cxxout_dir.mkdir(parents=True)
+    out_dir.mkdir(parents=True)
     
     # Configure CMake build
     configure_cmd = [
         "cmake",
         "-G", "Ninja",
-        "-S", str(CXXSOURCE_FOLDER),
-        "-B", str(cxxout_dir),
+        "-S", str(util.CXXSOURCE_FOLDER),
+        "-B", str(out_dir),
         f"-DCMAKE_BUILD_TYPE={config.value}",
         f"-DCMAKE_C_COMPILER={c_compiler}",
         f"-DCMAKE_CXX_COMPILER={cxx_compiler}"
@@ -194,14 +190,14 @@ def compile(out_dir: Path,
     print("Building CMake...")
     result = subprocess.run([
         "cmake",
-        "--build", str(cxxout_dir),
+        "--build", str(out_dir),
         "--parallel" # Helps with build times by using all available cores
     ])
     if result.returncode != 0:
-        print(f"CMake failed to build project to {cxxout_dir}, {result.stderr}")
+        print(f"CMake failed to build project to {out_dir}, {result.stderr}")
         return False
     
-    print(f"CMake build succeeded, see: {cxxout_dir}")
+    print(f"CMake build succeeded, see: {out_dir}")
     return True
 
 def _get_cross_compile_flags(platform: CXXPlatform, arch: CXXArchitecture) -> list[str]:
@@ -236,12 +232,9 @@ def install(out_dir: Path, to_dir: Path) -> bool:
     Returns:
         bool: True if the installation succeeded, or False if it didn't
     """
-
-    cxxout_folder = out_dir / "cmake"
-
     result = subprocess.run([
         "cmake",
-        "--install", str(cxxout_folder),
+        "--install", str(out_dir),
         "--prefix", str(to_dir)
     ], capture_output=True, text=True)
 

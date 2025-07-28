@@ -1,6 +1,7 @@
-from build import cs
-from build import cxx
-from build import vcpkg
+from scripts.build import cs
+from scripts.build import cxx
+from scripts.build import swig
+from scripts.build import vcpkg
 
 import shutil
 import sys
@@ -8,9 +9,7 @@ import time
 
 from pathlib import Path
 
-PROJECT_ROOT = Path(__file__).parents[1]
-BUILD_DIRECTORY = PROJECT_ROOT / "out"
-PACKAGE_DIRECTORY = BUILD_DIRECTORY / "torsion"
+from scripts import util
 
 def parse_args():
     return NotImplemented
@@ -24,10 +23,10 @@ def compile():
     start = time.time()
 
     # Clean build directory
-    if BUILD_DIRECTORY.exists():
+    if util.BUILD_DIRECTORY.exists():
         print("Cleaning build directory...")
-        shutil.rmtree(BUILD_DIRECTORY)
-    BUILD_DIRECTORY.mkdir(parents=True)
+        shutil.rmtree(util.BUILD_DIRECTORY)
+    util.BUILD_DIRECTORY.mkdir(parents=True)
 
     did_compilation_succeed = False
     elapsed = 0
@@ -42,33 +41,37 @@ def compile():
 
         # Compile C++ (C# depends on it)
         print("Compiling C++ components...")
-        cxx_compilation_res = cxx.compile(BUILD_DIRECTORY, cxx_config, cxx_compiler)
+        cxx_compilation_res = cxx.compile(util.CXXOUT_FOLDER, cxx_config, cxx_compiler)
         if not cxx_compilation_res:
             raise AssertionError("Failed to compile C++ components...")
 
-        # TODO: Create swig.py to create easy bindings for C++ -> C#
+        # Generate C# bindings from C++
+        print("Generating C# bindings from C++ components...")
+        swig_generation_res = swig.generate_cs_from_swig(util.SWIG_OUT_FOLDER)
+        if not swig_generation_res:
+            raise AssertionError("Failed to generate C# bindings from C++ components...")
     
         # Compile C#
         print("Compiling C# components...")
-        cs_compilation_res = cs.compile(BUILD_DIRECTORY, cs_config)
+        cs_compilation_res = cs.compile(util.CSOUT_FOLDER, cs_config)
         if not cs_compilation_res:
             raise AssertionError("Failed to compile C# components...")
 
         # Install C++ to package directory
         print("Installing C++ components...")
-        cxx_installation_res = cxx.install(BUILD_DIRECTORY, PACKAGE_DIRECTORY)
+        cxx_installation_res = cxx.install(util.CXXOUT_FOLDER, util.PACKAGE_DIRECTORY)
         if not cxx_installation_res:
             raise AssertionError("Failed to install C++ components...")
     
         # Install C# to package directory
         print("Installing C# components...")
-        cs_installation_res = cs.install(BUILD_DIRECTORY, PACKAGE_DIRECTORY)
+        cs_installation_res = cs.install(util.CSOUT_FOLDER, util.PACKAGE_DIRECTORY)
         if not cs_installation_res:
             raise AssertionError("Failed to install C# components...")
     except AssertionError as err:
         print(f"Torsion failed to finish compilation: {err}")
     else:
-        print(f"Torsion successfully compiled project to {BUILD_DIRECTORY} and packaged it into {PACKAGE_DIRECTORY}.")
+        print(f"Torsion successfully compiled project to {util.BUILD_DIRECTORY} and packaged it into {util.PACKAGE_DIRECTORY}.")
         did_compilation_succeed = True
     finally:
         elapsed = time.time()-start

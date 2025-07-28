@@ -5,9 +5,7 @@ import subprocess
 from enum import Enum
 from pathlib import Path
 
-PROJECT_ROOT = Path(__file__).parents[2]
-CSSOURCE_FOLDER = PROJECT_ROOT / "engine" / "managed"
-CSTEMP_OUT_DIR = CSSOURCE_FOLDER / "out"
+from scripts import util
 
 class CSBuildConfig(Enum):
     DEBUG = "Debug"
@@ -24,10 +22,9 @@ def is_dotnet_available() -> bool:
     return shutil.which("dotnet") is not None
 
 def clean(out_dir: Path):
-    csout_dir = out_dir / "dotnet"
-    if csout_dir.exists():
-        shutil.rmtree(csout_dir)
-        print(f"C# output folder at {csout_dir} exists, removing...")
+    if out_dir.exists():
+        shutil.rmtree(out_dir)
+        print(f"C# output folder at {out_dir} exists, removing...")
 
 def compile(out_dir: Path, config: CSBuildConfig = CSBuildConfig.DEBUG) -> bool:
     """Compiles C# solutions (.sln) and outputs into a directory
@@ -46,14 +43,12 @@ def compile(out_dir: Path, config: CSBuildConfig = CSBuildConfig.DEBUG) -> bool:
         print(f"Failed to start compilation due to .NET SDK not being installed, please install it.")
         return False
 
-    if CSTEMP_OUT_DIR.exists():
-        shutil.rmtree(CSTEMP_OUT_DIR)
+    if util.CSTEMP_OUT_DIR.exists():
+        shutil.rmtree(util.CSTEMP_OUT_DIR)
     
     # Get out directory
-    csout_dir = out_dir / "dotnet"
     clean(out_dir)
-
-    csout_dir.mkdir(parents=True)
+    out_dir.mkdir(parents=True)
 
     # Get optimal core count
     cpu_cores = os.cpu_count() or 1
@@ -61,14 +56,14 @@ def compile(out_dir: Path, config: CSBuildConfig = CSBuildConfig.DEBUG) -> bool:
 
     # Get root solution
     solution_file = None
-    for file in CSSOURCE_FOLDER.iterdir():
+    for file in util.CSSOURCE_FOLDER.iterdir():
         if not file.name.endswith(".sln"):
             continue
         solution_file = file
         break
 
     if solution_file is None:
-        print(f"No solutions (.sln) found in {CSSOURCE_FOLDER}, please create one.")
+        print(f"No solutions (.sln) found in {util.CSSOURCE_FOLDER}, please create one.")
         return False
 
     print(f"Building C# root solution at {solution_file}")
@@ -86,7 +81,7 @@ def compile(out_dir: Path, config: CSBuildConfig = CSBuildConfig.DEBUG) -> bool:
        print(f"Failed to build {solution_file.name}, {result.stderr}")
        return False
 
-    print(f"Successfully built C# project to {csout_dir}")
+    print(f"Successfully built C# project to {out_dir}")
 
     return True
 
@@ -97,23 +92,20 @@ def install(out_dir: Path, to_dir: Path) -> bool:
         bool: True if installation succeeded, or False if it failed
     """
 
-    # Find designated C# output folder
-    csout_dir = out_dir / "dotnet"
-
     # Move all built C# files into C# output folder
-    for item in CSTEMP_OUT_DIR.iterdir():
+    for item in util.CSTEMP_OUT_DIR.iterdir():
         if item.is_file():
-            shutil.copy2(item, csout_dir / item.name)
-    shutil.rmtree(CSTEMP_OUT_DIR) # We don't need it anymore now
+            shutil.copy2(item, out_dir / item.name)
+    shutil.rmtree(util.CSTEMP_OUT_DIR) # We don't need it anymore now
 
     # Ensure the output exists
-    if not csout_dir.exists():
-        print(f"C# build directory not found! {csout_dir}")
+    if not out_dir.exists():
+        print(f"C# build directory not found! {out_dir}")
         return False
 
     # Ensure it's not empty
-    if len(os.listdir(csout_dir)) == 0:
-        print(f"C# build directory is empty! {csout_dir}")
+    if len(os.listdir(out_dir)) == 0:
+        print(f"C# build directory is empty! {out_dir}")
         return False
     
     # Get bin folder from package directory
@@ -122,13 +114,13 @@ def install(out_dir: Path, to_dir: Path) -> bool:
         print(f"Packaged directory has no bin folder! {bin_dir}")
         return False
 
-    print(f"Installing C# {csout_dir} -> {bin_dir}")
+    print(f"Installing C# {out_dir} -> {bin_dir}")
 
     # Copy all files from C# output folder to packaged directory
-    for item in csout_dir.iterdir():
+    for item in out_dir.iterdir():
         if item.is_file():
             shutil.copy2(item, bin_dir / item.name)
         elif item.is_dir():
             shutil.copytree(item, bin_dir / item.name)
-    print(f"Succeeded in installing C# {csout_dir} -> {bin_dir}")
+    print(f"Succeeded in installing C# {out_dir} -> {bin_dir}")
     return True
