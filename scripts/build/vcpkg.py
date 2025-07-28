@@ -6,8 +6,7 @@ import subprocess
 from enum import Enum
 from pathlib import Path
 
-PROJECT_ROOT = Path(__file__).parents[2]
-CXXSOURCE_FOLDER = PROJECT_ROOT / "engine" / "native"
+from scripts import util
 
 class VTriplet(Enum):
     # Windows triplets
@@ -146,7 +145,7 @@ def build_packages(triplet: VTriplet = VTriplet.NONE) -> bool:
 
     # Move to cxx source folder as it has the vcpkg.json
 
-    os.chdir(CXXSOURCE_FOLDER)
+    os.chdir(util.CXXSOURCE_FOLDER)
     
     # Build packages
     result = subprocess.run([

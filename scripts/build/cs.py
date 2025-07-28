@@ -5,9 +5,7 @@ import subprocess
 from enum import Enum
 from pathlib import Path
 
-PROJECT_ROOT = Path(__file__).parents[2]
-CSSOURCE_FOLDER = PROJECT_ROOT / "engine" / "managed"
-CSTEMP_OUT_DIR = CSSOURCE_FOLDER / "out"
+from scripts import util
 
 class CSBuildConfig(Enum):
     DEBUG = "Debug"
@@ -46,8 +44,8 @@ def compile(out_dir: Path, config: CSBuildConfig = CSBuildConfig.DEBUG) -> bool:
         print(f"Failed to start compilation due to .NET SDK not being installed, please install it.")
         return False
 
-    if CSTEMP_OUT_DIR.exists():
-        shutil.rmtree(CSTEMP_OUT_DIR)
+    if util.CSTEMP_OUT_DIR.exists():
+        shutil.rmtree(util.CSTEMP_OUT_DIR)
     
     # Get out directory
     csout_dir = out_dir / "dotnet"
@@ -61,14 +59,14 @@ def compile(out_dir: Path, config: CSBuildConfig = CSBuildConfig.DEBUG) -> bool:
 
     # Get root solution
     solution_file = None
-    for file in CSSOURCE_FOLDER.iterdir():
+    for file in util.CSSOURCE_FOLDER.iterdir():
         if not file.name.endswith(".sln"):
             continue
         solution_file = file
         break
 
     if solution_file is None:
-        print(f"No solutions (.sln) found in {CSSOURCE_FOLDER}, please create one.")
+        print(f"No solutions (.sln) found in {util.CSSOURCE_FOLDER}, please create one.")
         return False
 
     print(f"Building C# root solution at {solution_file}")
@@ -101,10 +99,10 @@ def install(out_dir: Path, to_dir: Path) -> bool:
     csout_dir = out_dir / "dotnet"
 
     # Move all built C# files into C# output folder
-    for item in CSTEMP_OUT_DIR.iterdir():
+    for item in util.CSTEMP_OUT_DIR.iterdir():
         if item.is_file():
             shutil.copy2(item, csout_dir / item.name)
-    shutil.rmtree(CSTEMP_OUT_DIR) # We don't need it anymore now
+    shutil.rmtree(util.CSTEMP_OUT_DIR) # We don't need it anymore now
 
     # Ensure the output exists
     if not csout_dir.exists():

@@ -2,4 +2,8 @@
   <PropertyGroup>
     <PublishDir>$(SolutionDir)out\</PublishDir>
   </PropertyGroup>
+
+	<ItemGroup>
+		<Compile Include="..\..\..\swig-gen\**\*.cs"/>
+	</ItemGroup>
 </Project>

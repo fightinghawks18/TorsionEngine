@@ -7,8 +7,7 @@ import subprocess
 from enum import Enum
 from pathlib import Path
 
-PROJECT_ROOT = Path(__file__).parents[2]
-CXXSOURCE_FOLDER = PROJECT_ROOT / "engine" / "native"
+from scripts import util
 
 class CXXBuildConfig(Enum):
     DEBUG = "Debug"
@@ -162,7 +161,7 @@ def compile(out_dir: Path,
     configure_cmd = [
         "cmake",
         "-G", "Ninja",
-        "-S", str(CXXSOURCE_FOLDER),
+        "-S", str(util.CXXSOURCE_FOLDER),
         "-B", str(cxxout_dir),
         f"-DCMAKE_BUILD_TYPE={config.value}",
         f"-DCMAKE_C_COMPILER={c_compiler}",

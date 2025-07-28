@@ -79,6 +79,9 @@ artifacts/
 *.swo
 *~
 
+# swig
+swig-gen/
+
 # vcpkg
 vcpkg_installed/
 .vcpkg-root
