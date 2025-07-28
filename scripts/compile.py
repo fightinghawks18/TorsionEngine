@@ -3,6 +3,7 @@ from scripts.build import cxx
 from scripts.build import swig
 from scripts.build import vcpkg
 
+import argparse
 import shutil
 import sys
 import time
@@ -12,13 +13,48 @@ from pathlib import Path
 from scripts import util
 
 def parse_args():
-    return NotImplemented
+    parser = argparse.ArgumentParser(description="TorsionEngineBuilder")
+    parser.add_argument(
+        "--compiler",
+        choices=["msvc", "gcc", "clang"],
+        default="msvc",
+        help="What tool to compile C++ with")
+    parser.add_argument(
+        "--config",
+        choices=["Debug", "Release"],
+        default="Debug",
+        help="Build configuration (Debug has debug symbols, while Release has none and is ready for distribution)")
+    parser.add_argument(
+        "--platform",
+        choices=["windows", "linux", "macos", "none"],
+        default="none",
+        help="The platform to build for")
+    parser.add_argument(
+        "--arch",
+        choices=["x64", "x86", "arm64", "arm86", "none"],
+        default="none",
+        help="The architecture to build for")
+    return parser.parse_args()
 
 def compile():
-    cxx_config = cxx.CXXBuildConfig.DEBUG
-    cxx_compiler = cxx.CXXCompiler.MSVC
+    args = parse_args() # Parse arguments from cli
 
-    cs_config = cs.CSBuildConfig.DEBUG
+    # Get arguments
+    build_config = util.BuildConfig(args.config)
+    cxx_compiler = cxx.CXXCompiler(args.compiler)
+
+    platform = util.Platform(args.platform)
+    arch = util.Architecture(args.arch)
+
+    # Get host platform info
+    host_platform, host_arch = util.get_host_platform()
+
+    if arch == util.Architecture.NONE:
+        arch = host_arch
+    if platform == util.Platform.NONE:
+        platform = host_platform
+
+    vcpkg_triplet = vcpkg.get_vcpkg_triplet(platform, arch)
 
     start = time.time()
 
@@ -35,13 +71,18 @@ def compile():
     # Begin building project
     try:
         # Build vcpkg packages (C++ depends on it, unless they have already been built)
-        vcpkg_build_res = vcpkg.build_packages()
+        vcpkg_build_res = vcpkg.build_packages(vcpkg_triplet)
         if not vcpkg_build_res:
             raise AssertionError("Failed to build vcpkg packages...")
 
         # Compile C++ (C# depends on it)
         print("Compiling C++ components...")
-        cxx_compilation_res = cxx.compile(util.CXXOUT_FOLDER, cxx_config, cxx_compiler)
+        cxx_compilation_res = cxx.compile(
+            util.CXXOUT_FOLDER, 
+            build_config, 
+            cxx_compiler, 
+            platform, 
+            arch)
         if not cxx_compilation_res:
             raise AssertionError("Failed to compile C++ components...")
 
@@ -53,7 +94,11 @@ def compile():
     
         # Compile C#
         print("Compiling C# components...")
-        cs_compilation_res = cs.compile(util.CSOUT_FOLDER, cs_config)
+        cs_compilation_res = cs.compile(
+            util.CSOUT_FOLDER, 
+            build_config, 
+            platform, 
+            arch)
         if not cs_compilation_res:
             raise AssertionError("Failed to compile C# components...")
 

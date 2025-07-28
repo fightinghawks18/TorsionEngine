@@ -5,6 +5,7 @@ import subprocess
 
 from enum import Enum
 from pathlib import Path
+from scripts.util import Platform, Architecture
 
 from scripts import util
 
@@ -109,6 +110,40 @@ def get_host_triplet() -> VTriplet:
                 print("Defaulting to x64-linux")
                 return VTriplet.X64_LINUX
 
+def get_vcpkg_triplet(platform: Platform, arch: Architecture) -> VTriplet:
+    print(f"Getting vcpkg triplet from: {platform.value}, {arch.value}")
+    match (platform, arch):
+        # Windows
+        case (Platform.WINDOWS, Architecture.X64):
+            return VTriplet.X64_WINDOWS
+        case (Platform.WINDOWS, Architecture.X86):
+            return VTriplet.X86_WINDOWS
+        case (Platform.WINDOWS, Architecture.ARM64):
+            return VTriplet.ARM64_WINDOWS
+        # Linux
+        case (Platform.LINUX, Architecture.X64):
+            return VTriplet.X64_LINUX
+        case (Platform.LINUX, Architecture.X86):
+            return VTriplet.X86_LINUX
+        case (Platform.LINUX, Architecture.ARM64):
+            return VTriplet.ARM64_LINUX
+        # macOS
+        case (Platform.MACOS, Architecture.X64):
+            return VTriplet.X64_OSX
+        case (Platform.MACOS, Architecture.ARM64):
+            return VTriplet.ARM64_OSX
+        # Android
+        case (Platform.ANDROID, Architecture.ARM):
+            return VTriplet.ARM_ANDROID
+        case (Platform.ANDROID, Architecture.ARM64):
+            return VTriplet.ARM64_ANDROID
+        case (Platform.ANDROID, Architecture.X64):
+            return VTriplet.X64_ANDROID
+        # Fallback
+        case _:
+            return VTriplet.NONE
+
+
 def build_packages(triplet: VTriplet = VTriplet.NONE) -> bool:
     """Builds vcpkg packages
 
@@ -148,11 +183,18 @@ def build_packages(triplet: VTriplet = VTriplet.NONE) -> bool:
     os.chdir(util.CXXSOURCE_FOLDER)
     
     # Build packages
-    result = subprocess.run([
+    vcpkg_cmd = [
         vcpkg, "install",
         f"--triplet={triplet.value}",
         f"--host-triplet={host_triplet.value}"
-    ])
+    ]
+
+    # If we are cross-compiling, allow unsupported packages
+    # This ensures we can build packages that aren't supported on host platforms
+    if triplet != host_triplet:
+        vcpkg_cmd.append("--allow-unsupported")
+
+    result = subprocess.run(vcpkg_cmd, capture_output=True, text=True)
 
     if result.returncode != 0:
         print(f"Failed to build vcpkg packages: {result.stderr}")

@@ -4,13 +4,9 @@ import subprocess
 
 from enum import Enum
 from pathlib import Path
+from tkinter import NO
 
 from scripts import util
-
-class CSBuildConfig(Enum):
-    DEBUG = "Debug"
-    RELEASE = "Release"
-
 
 def is_dotnet_available() -> bool:
     """Checks if this system installed .NET
@@ -26,7 +22,10 @@ def clean(out_dir: Path):
         shutil.rmtree(out_dir)
         print(f"C# output folder at {out_dir} exists, removing...")
 
-def compile(out_dir: Path, config: CSBuildConfig = CSBuildConfig.DEBUG) -> bool:
+def compile(out_dir: Path, 
+            config: util.BuildConfig = util.BuildConfig.DEBUG, 
+            target_platform: util.Platform = util.Platform.NONE,
+           target_arch: util.Architecture = util.Architecture.NONE) -> bool:
     """Compiles C# solutions (.sln) and outputs into a directory
 
     Args:
@@ -66,6 +65,8 @@ def compile(out_dir: Path, config: CSBuildConfig = CSBuildConfig.DEBUG) -> bool:
         print(f"No solutions (.sln) found in {util.CSSOURCE_FOLDER}, please create one.")
         return False
 
+    dotnet_platform = util.platform_to_cs_platform(target_platform) + "-" + target_arch.value
+
     print(f"Building C# root solution at {solution_file}")
 
     # Build project
@@ -73,6 +74,7 @@ def compile(out_dir: Path, config: CSBuildConfig = CSBuildConfig.DEBUG) -> bool:
         "dotnet", "publish", str(solution_file),
         "-c", config.value,
         "--self-contained", "false",
+        "-r", dotnet_platform,
         f"-maxcpucount:{max_cores}",
         "--verbosity", "minimal"
     ])

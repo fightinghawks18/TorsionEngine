@@ -6,4 +6,8 @@
 	<ItemGroup>
 		<Compile Include="..\..\..\swig-gen\**\*.cs"/>
 	</ItemGroup>
+
+	<PropertyGroup>
+		<DebugType>portable</DebugType>
+	</PropertyGroup>
 </Project>
