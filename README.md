@@ -20,6 +20,9 @@ If you don't know how to add stuff to your path please refer to these links base
 
 After installing all required libraries, you can now run `make all` if you installed Make, or `python3 -m scripts.compile` if you wanna use Python instead.
 
+## Commands For Make
+* **Build the project** `make build` *aka `make all`*
+
 ## Arguments for Python
 * **Build configuration** `--config`
     * The build type you are using
