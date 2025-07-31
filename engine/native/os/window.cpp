@@ -55,7 +55,7 @@ namespace TorsionEngine::OS
     void Window::SetTitle(const std::string& title)
     {
         if (_title == title) return;
-
+        
         SDL_SetWindowTitle(_window, title.c_str());
         _title = title;
     }
@@ -64,11 +64,12 @@ namespace TorsionEngine::OS
     {
         if (icon.empty())
         {
+            // Remove window icon
             SDL_SetWindowIcon(_window, nullptr);
         }
         else
         {
-            // Create a readable texture for SDL, then destroy after use
+            // Create a readable texture for SDL
             SDL_Surface* iconSurface = SDL_LoadBMP(icon.c_str());
             if (iconSurface == nullptr)
             {
@@ -77,6 +78,7 @@ namespace TorsionEngine::OS
                 throw std::runtime_error(error);
             }
 
+            // Set and destroy window icon
             SDL_SetWindowIcon(_window, iconSurface);
             SDL_DestroySurface(iconSurface);
         }

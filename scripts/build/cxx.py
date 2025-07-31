@@ -12,13 +12,46 @@ from scripts import util
 class CXXCompiler(Enum):
     GCC = "gcc"
     CLANG = "clang"
-    MSVC = "msvc"
+    MSVC = "msvc",
+    NATIVE = "native"
 
 CXXCOMPILER_MAP = {
     CXXCompiler.GCC: [("gcc", "g++")],
     CXXCompiler.CLANG: [("clang", "clang++")],
     CXXCompiler.MSVC: [("cl", "cl")]
 }
+
+def get_native_compiler() -> tuple[Path, Path] | None:
+    """Detect the system's native C++ compiler
+    
+    Returns:
+        tuple[Path, Path]|None: paths to the native C and C++ compilers, or None if not found
+    """
+    system = platform.system().lower()
+    
+    if system == "windows":
+        # Check for MSVC first (native Windows compiler)
+        if shutil.which("cl.exe") or shutil.which("cl"):
+            cl_path = shutil.which("cl.exe") or shutil.which("cl")
+            return (Path(cl_path), Path(cl_path))  # MSVC uses same executable for C and C++
+        elif shutil.which("clang++"):
+            return (Path(shutil.which("clang")), Path(shutil.which("clang++")))
+        elif shutil.which("g++"):
+            return (Path(shutil.which("gcc")), Path(shutil.which("g++")))
+    
+    elif system == "darwin":  # macOS
+        if shutil.which("clang++"):
+            return (Path(shutil.which("clang")), Path(shutil.which("clang++")))
+        elif shutil.which("g++"):
+            return (Path(shutil.which("gcc")), Path(shutil.which("g++")))
+    
+    elif system == "linux":
+        if shutil.which("g++"):
+            return (Path(shutil.which("gcc")), Path(shutil.which("g++")))
+        elif shutil.which("clang++"):
+            return (Path(shutil.which("clang")), Path(shutil.which("clang++")))
+    
+    return None  # No compiler found
 
 def get_c_compilers(compiler: CXXCompiler) -> tuple[Path, Path] | None:
     """Queries for C and C++ compiler executables for the specified compiler
@@ -81,7 +114,11 @@ def compile(out_dir: Path,
     is_cross_compiling = (target_platform != host_platform) or (target_arch != host_arch)
     
     # Get C and CXX compilers for the compiler type
-    compilers = get_c_compilers(compiler)
+    if compiler == CXXCompiler.NATIVE:
+        compilers = get_native_compiler()
+    else:
+        compilers = get_c_compilers(compiler)
+
     if compilers is None:
         print(f"Attempted to search for {compiler.value} c and cxx compilers, failed to find a match. Please install these compilers again, or add them to PATH.")
         return False

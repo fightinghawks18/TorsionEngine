@@ -16,8 +16,8 @@ def parse_args():
     parser = argparse.ArgumentParser(description="TorsionEngineBuilder")
     parser.add_argument(
         "--compiler",
-        choices=["msvc", "gcc", "clang"],
-        default="msvc",
+        choices=["msvc", "gcc", "clang", "native"],
+        default="native",
         help="What tool to compile C++ with")
     parser.add_argument(
         "--config",
