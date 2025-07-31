@@ -21,36 +21,47 @@ CXXCOMPILER_MAP = {
     CXXCompiler.MSVC: [("cl", "cl")]
 }
 
-def get_native_compiler() -> tuple[Path, Path] | None:
+def get_native_compiler(platform: util.Platform) -> tuple[Path, Path] | None:
     """Detect the system's native C++ compiler
     
     Returns:
         tuple[Path, Path]|None: paths to the native C and C++ compilers, or None if not found
     """
-    system = platform.system().lower()
     
-    if system == "windows":
-        # Check for MSVC first (native Windows compiler)
-        if shutil.which("cl.exe") or shutil.which("cl"):
-            cl_path = shutil.which("cl.exe") or shutil.which("cl")
-            return (Path(cl_path), Path(cl_path))  # MSVC uses same executable for C and C++
-        elif shutil.which("clang++"):
-            return (Path(shutil.which("clang")), Path(shutil.which("clang++")))
-        elif shutil.which("g++"):
-            return (Path(shutil.which("gcc")), Path(shutil.which("g++")))
-    
-    elif system == "darwin":  # macOS
-        if shutil.which("clang++"):
-            return (Path(shutil.which("clang")), Path(shutil.which("clang++")))
-        elif shutil.which("g++"):
-            return (Path(shutil.which("gcc")), Path(shutil.which("g++")))
-    
-    elif system == "linux":
-        if shutil.which("g++"):
-            return (Path(shutil.which("gcc")), Path(shutil.which("g++")))
-        elif shutil.which("clang++"):
-            return (Path(shutil.which("clang")), Path(shutil.which("clang++")))
-    
+    if platform == util.Platform.WINDOWS:
+        # Try MSVC first
+        compilers = get_c_compilers(CXXCompiler.MSVC)
+        if compilers:
+            return compilers
+        # Try Clang
+        compilers = get_c_compilers(CXXCompiler.CLANG)
+        if compilers:
+            return compilers
+        # Try GCC
+        compilers = get_c_compilers(CXXCompiler.GCC)
+        if compilers:
+            return compilers
+
+    elif platform == util.Platform.MACOS:
+        # Try Clang first
+        compilers = get_c_compilers(CXXCompiler.CLANG)
+        if compilers:
+            return compilers
+        # Try GCC
+        compilers = get_c_compilers(CXXCompiler.GCC)
+        if compilers:
+            return compilers
+
+    elif platform == util.Platform.LINUX:
+        # Try GCC first
+        compilers = get_c_compilers(CXXCompiler.GCC)
+        if compilers:
+            return compilers
+        # Try Clang
+        compilers = get_c_compilers(CXXCompiler.CLANG)
+        if compilers:
+            return compilers
+
     return None  # No compiler found
 
 def get_c_compilers(compiler: CXXCompiler) -> tuple[Path, Path] | None:
@@ -115,7 +126,7 @@ def compile(out_dir: Path,
     
     # Get C and CXX compilers for the compiler type
     if compiler == CXXCompiler.NATIVE:
-        compilers = get_native_compiler()
+        compilers = get_native_compiler(target_platform)
     else:
         compilers = get_c_compilers(compiler)
 
