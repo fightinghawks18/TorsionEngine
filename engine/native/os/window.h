@@ -5,17 +5,31 @@
 
 namespace TorsionEngine::OS
 {
+	/// @brief Changes the way a window is displayed on the screen
+	enum class WindowMode 
+	{
+		/// @brief Displays the window onto a rectangular area that can be moved around freely
+		Windowed,
+		/// @brief Displays the window over the entire screen and cannot be moved
+		Fullscreen,
+		/// @brief Windowed mode mimicing Fullscreen mode, can solve problems like alt+tab
+		BorderlessWindowed
+	};
+
 	/// @brief Settings used for the creation of the window
 	struct WindowSettings
 	{
 		std::string title = "Torsion Engine";
+		std::string icon = "";
 		int width = 1280;
 		int height = 720;
 		int x = SDL_WINDOWPOS_CENTERED;
 		int y = SDL_WINDOWPOS_CENTERED;
 		bool resizable = true;
+		WindowMode mode;
 	};
 
+	/// @brief OS class for handling and processing native windows
 	class Window
 	{
 	public:
@@ -33,9 +47,18 @@ namespace TorsionEngine::OS
 		/// @param title The window's new name
 		void SetTitle(const std::string& title);
 
+		/// @brief Changes the window's current icon
+		/// @param icon The path to the window's new icon
+		void SetIcon(const std::string& icon);
+
 		/// @brief Sets whether this window can be resized by the user
 		/// @param resizable Can the user resize this window
 		void SetResizable(const bool resizable);
+
+		/// @brief Changes the window's current mode
+		/// @note I.E. Fullscreen, Windowed, etc
+		/// @param mode The window's new mode
+		void SetMode(const WindowMode mode);
 
 		/// @brief Changes the window's current size in pixels
 		/// @param width The window's width in pixels
@@ -51,7 +74,7 @@ namespace TorsionEngine::OS
 		void Center() { Move(SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED); }
 		
 		/// @brief Returns the window's current close request
-		/// @return The window's close request state, true if it wants to close, false if it doesn't
+		/// @return True if it wants to close, false if it doesn't
 		[[nodiscard]] bool NeedsToClose() const { return _closeRequest; }
 
 		/// @brief Returns the handle of the window
@@ -60,9 +83,15 @@ namespace TorsionEngine::OS
 	private:
 		SDL_Window* _window;
 		std::string _title;
+		std::string _icon;
 		int _width, _height;
 		int _x, _y;
+		WindowMode _mode;
 		bool _closeRequest = false;
 		bool _resizable = true;
+
+		/// @brief Checks if the window can be moved or resized
+		/// @return True if this window can be moved/resized, or False if not
+		bool IsRectModifiable() { return _mode == WindowMode::Windowed; }
 	};
 }

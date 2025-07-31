@@ -5,7 +5,8 @@ namespace TorsionEngine::OS
     Window::Window(const WindowSettings& settings)
         : _title(settings.title), _width(settings.width),
         _height(settings.height), _x(settings.x), 
-        _y(settings.y), _resizable(settings.resizable)
+        _y(settings.y), _resizable(settings.resizable),
+        _mode(settings.mode), _icon(settings.icon)
     {
         SDL_WindowFlags flags = SDL_WINDOW_VULKAN;
 
@@ -23,8 +24,11 @@ namespace TorsionEngine::OS
             throw std::runtime_error(error);
         }
 
-        Move(_x, _y);
+        // Set properties after creation that aren't available in SDL_CreateWindow
         SetResizable(_resizable);
+        SetMode(_mode);
+        SetIcon(_icon);
+        Move(_x, _y);
     }
 
     Window::~Window()
@@ -50,8 +54,33 @@ namespace TorsionEngine::OS
 
     void Window::SetTitle(const std::string& title)
     {
+        if (_title == title) return;
+
         SDL_SetWindowTitle(_window, title.c_str());
         _title = title;
+    }
+
+    void Window::SetIcon(const std::string& icon)
+    {
+        if (icon.empty())
+        {
+            SDL_SetWindowIcon(_window, nullptr);
+        }
+        else
+        {
+            // Create a readable texture for SDL, then destroy after use
+            SDL_Surface* iconSurface = SDL_LoadBMP(icon.c_str());
+            if (iconSurface == nullptr)
+            {
+                std::string error = "Failed to create icon surface for window: ";
+                error += SDL_GetError();
+                throw std::runtime_error(error);
+            }
+
+            SDL_SetWindowIcon(_window, iconSurface);
+            SDL_DestroySurface(iconSurface);
+        }
+        _icon = icon;
     }
 
     void Window::SetResizable(const bool resizable)
@@ -62,19 +91,55 @@ namespace TorsionEngine::OS
         _resizable = resizable;
     }
 
+    void Window::SetMode(const WindowMode mode)
+    {
+        if (_mode == mode) return;
+
+        switch (mode)
+        {
+            case WindowMode::Windowed:
+            {
+                SDL_SetWindowFullscreen(_window, false);
+
+                // SDL_RestoreWindow exists but my functions allow changing rect in fullscreen
+                Move(_x, _y);
+                Resize(_width, _height);
+                break;
+            }
+            case WindowMode::Fullscreen:
+            {
+                SDL_SetWindowFullscreen(_window, true);
+                break;
+            }
+            case WindowMode::BorderlessWindowed:
+            {
+                SDL_SetWindowFullscreen(_window, false);
+                SDL_SetWindowBordered(_window, false);
+                SDL_MaximizeWindow(_window);
+                break;
+            }
+        }
+
+        _mode = mode;
+    }
+
     void Window::Resize(const int width, const int height)
     {
         if (width <= 0 || height <= 0) return;
 
-        SDL_SetWindowSize(_window, width, height);
         _width = width;
         _height = height;
+
+        if (!IsRectModifiable()) return;
+        SDL_SetWindowSize(_window, width, height);
     }
 
     void Window::Move(const int x, const int y)
     {
-        SDL_SetWindowPosition(_window, x, y);
         _x = x;
         _y = y;
+        
+        if (!IsRectModifiable()) return;
+        SDL_SetWindowPosition(_window, x, y);
     }
 }
