@@ -1,6 +1,7 @@
 <Project>
   <PropertyGroup>
     <PublishDir>$(SolutionDir)out\</PublishDir>
+	<Platforms>AnyCPU;x64;x86;ARM64</Platforms>
   </PropertyGroup>
 
 	<ItemGroup>

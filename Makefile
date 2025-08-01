@@ -1,7 +1,7 @@
 CONFIG ?= Debug
 ARCH ?= x64
 PLATFORM ?= windows
-COMPILER ?= native
+COMPILER ?= any
 
 all: build
 

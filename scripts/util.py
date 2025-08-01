@@ -29,7 +29,7 @@ class Platform(Enum):
     WINDOWS = "windows"
     MACOS = "macos"
     ANDROID = "android"
-    NONE = "none"
+    CURRENT = "current"
 
 class BuildConfig(Enum):
     DEBUG = "Debug"
@@ -40,7 +40,7 @@ class Architecture(Enum):
     X86 = "x86"
     ARM64 = "arm64"
     ARM = "arm"
-    NONE = "none"
+    CURRENT = "current"
 
 def platform_to_cs_platform(platform: Platform) -> str:
     """Returns a platform based on the enum that works with .NET

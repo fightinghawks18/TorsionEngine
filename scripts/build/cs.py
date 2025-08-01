@@ -24,8 +24,8 @@ def clean(out_dir: Path):
 
 def compile(out_dir: Path, 
             config: util.BuildConfig = util.BuildConfig.DEBUG, 
-            target_platform: util.Platform = util.Platform.NONE,
-           target_arch: util.Architecture = util.Architecture.NONE) -> bool:
+            target_platform: util.Platform = util.Platform.CURRENT,
+           target_arch: util.Architecture = util.Architecture.CURRENT) -> bool:
     """Compiles C# solutions (.sln) and outputs into a directory
 
     Args:
@@ -41,10 +41,10 @@ def compile(out_dir: Path,
     if dotnet is None:
         print(f"Failed to start compilation due to .NET SDK not being installed, please install it.")
         return False
-
+    
     if util.CSTEMP_OUT_DIR.exists():
         shutil.rmtree(util.CSTEMP_OUT_DIR)
-    
+
     # Get out directory
     clean(out_dir)
     out_dir.mkdir(parents=True)
@@ -67,7 +67,7 @@ def compile(out_dir: Path,
 
     dotnet_platform = util.platform_to_cs_platform(target_platform) + "-" + target_arch.value
 
-    print(f"Building C# root solution at {solution_file}")
+    print(f"Building C# root solution at {solution_file} with platform {dotnet_platform}")
 
     # Build project
     result = subprocess.run([
@@ -83,7 +83,7 @@ def compile(out_dir: Path,
        print(f"Failed to build {solution_file.name}, {result.stderr}")
        return False
 
-    print(f"Successfully built C# project to {out_dir}")
+    print(f"Successfully built C# project to temporary output {util.CSTEMP_OUT_DIR}")
 
     return True
 
@@ -94,11 +94,19 @@ def install(out_dir: Path, to_dir: Path) -> bool:
         bool: True if installation succeeded, or False if it failed
     """
 
-    # Move all built C# files into C# output folder
+    # Move all files from the temporary output directory to the output directory
+    if not util.CSTEMP_OUT_DIR.exists():
+        print(f"C# temporary output directory not found! {util.CSTEMP_OUT_DIR}")
+        return False
     for item in util.CSTEMP_OUT_DIR.iterdir():
         if item.is_file():
             shutil.copy2(item, out_dir / item.name)
-    shutil.rmtree(util.CSTEMP_OUT_DIR) # We don't need it anymore now
+        elif item.is_dir():
+            shutil.copytree(item, out_dir / item.name)
+    print(f"Moved C# output from {util.CSTEMP_OUT_DIR} to {out_dir}")
+
+    # Remove the temporary output directory
+    shutil.rmtree(util.CSTEMP_OUT_DIR)
 
     # Ensure the output exists
     if not out_dir.exists():

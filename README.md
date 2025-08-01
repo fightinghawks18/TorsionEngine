@@ -15,6 +15,15 @@ If you don't know how to add stuff to your path please refer to these links base
 * **Python3** - https://www.python.org/downloads/ (Needed to build the system)
 * **Vcpkg** [C++ Package Manager] - https://learn.microsoft.com/en-us/vcpkg/get_started/get-started?pivots=shell-powershell
 * **CMake** [C++ Build System] - https://cmake.org/download/
+* **GCC** *and/or* **Clang** [C++ and C compilers] - Methods vary, check below
+    * **GCC**
+        * Windows: https://www.mingw-w64.org/downloads/ *or* https://github.com/niXman/mingw-builds-binaries/releases
+        * Linux: Already included with Linux *or* `sudo apt install gcc`
+        * MacOS: *Uses Clang out of the box now*, install with `brew install gcc`
+    * **Clang**
+        * Windows: 
+        * Linux: `sudo apt install clang`
+        * MacOS: *Already comes with Clang*
 * **.NET** [Cross-Platform C# Platform] - https://dotnet.microsoft.com/en-us/download
 * **SWIG** [Simplified Wrapper and Interface Generator] - https://www.swig.org/download.html (Needed for C++ -> C#, check the unix note below the windows installation)
 
@@ -39,8 +48,8 @@ After installing all required libraries, you can now run `make all` if you insta
 * **C++ compiler** `--compiler`
     * The compiler you wanna use for c++
         * *You must install the compiler you wanna use if it's not native to your system*
-    * Choices: msvc, gcc, clang
-    * Default: **Your platform's native compiler** [e.g. Windows uses MSVC]
+    * Choices: gcc, clang, any
+    * Default: **Any C++ and C compiler on your system**
 
 ## Arguments for Make (Refer to Python)
 * **Build configuration** `CONFIG=`

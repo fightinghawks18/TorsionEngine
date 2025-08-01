@@ -16,8 +16,8 @@ def parse_args():
     parser = argparse.ArgumentParser(description="TorsionEngineBuilder")
     parser.add_argument(
         "--compiler",
-        choices=["msvc", "gcc", "clang", "native"],
-        default="native",
+        choices=["gcc", "clang", "any"],
+        default="any",
         help="What tool to compile C++ with")
     parser.add_argument(
         "--config",
@@ -26,13 +26,13 @@ def parse_args():
         help="Build configuration (Debug has debug symbols, while Release has none and is ready for distribution)")
     parser.add_argument(
         "--platform",
-        choices=["windows", "linux", "macos", "none"],
-        default="none",
+        choices=["windows", "linux", "macos", "current"],
+        default="current",
         help="The platform to build for")
     parser.add_argument(
         "--arch",
-        choices=["x64", "x86", "arm64", "arm86", "none"],
-        default="none",
+        choices=["x64", "x86", "arm64", "arm86", "current"],
+        default="current",
         help="The architecture to build for")
     return parser.parse_args()
 
@@ -49,9 +49,9 @@ def compile():
     # Get host platform info
     host_platform, host_arch = util.get_host_platform()
 
-    if arch == util.Architecture.NONE:
+    if arch == util.Architecture.CURRENT:
         arch = host_arch
-    if platform == util.Platform.NONE:
+    if platform == util.Platform.CURRENT:
         platform = host_platform
 
     vcpkg_triplet = vcpkg.get_vcpkg_triplet(platform, arch)

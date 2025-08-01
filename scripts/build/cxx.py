@@ -1,5 +1,6 @@
 from . import vcpkg
 
+import glob
 import platform
 import shutil
 import subprocess
@@ -8,59 +9,32 @@ from enum import Enum
 from pathlib import Path
 
 from scripts import util
+import os
 
 class CXXCompiler(Enum):
     GCC = "gcc"
     CLANG = "clang"
-    MSVC = "msvc",
-    NATIVE = "native"
+    ANY = "any"
 
 CXXCOMPILER_MAP = {
     CXXCompiler.GCC: [("gcc", "g++")],
-    CXXCompiler.CLANG: [("clang", "clang++")],
-    CXXCompiler.MSVC: [("cl", "cl")]
+    CXXCompiler.CLANG: [("clang", "clang++")]
 }
 
-def get_native_compiler(platform: util.Platform) -> tuple[Path, Path] | None:
-    """Detect the system's native C++ compiler
+def get_any_compiler(platform: util.Platform) -> tuple[str, str] | None:
+    """Looks for any C and C++ compiler available on the system
     
     Returns:
-        tuple[Path, Path]|None: paths to the native C and C++ compilers, or None if not found
+        tuple[str, str]|None: strings of the native C and C++ compilers, or None if not found
     """
     
-    if platform == util.Platform.WINDOWS:
-        # Try MSVC first
-        compilers = get_c_compilers(CXXCompiler.MSVC)
-        if compilers:
-            return compilers
-        # Try Clang
-        compilers = get_c_compilers(CXXCompiler.CLANG)
-        if compilers:
-            return compilers
-        # Try GCC
-        compilers = get_c_compilers(CXXCompiler.GCC)
-        if compilers:
-            return compilers
-
-    elif platform == util.Platform.MACOS:
-        # Try Clang first
-        compilers = get_c_compilers(CXXCompiler.CLANG)
-        if compilers:
-            return compilers
-        # Try GCC
-        compilers = get_c_compilers(CXXCompiler.GCC)
-        if compilers:
-            return compilers
-
-    elif platform == util.Platform.LINUX:
-        # Try GCC first
-        compilers = get_c_compilers(CXXCompiler.GCC)
-        if compilers:
-            return compilers
-        # Try Clang
-        compilers = get_c_compilers(CXXCompiler.CLANG)
-        if compilers:
-            return compilers
+    compilers = get_c_compilers(CXXCompiler.CLANG)
+    if compilers:
+        return compilers
+    
+    compilers = get_c_compilers(CXXCompiler.GCC)
+    if compilers:
+        return compilers
 
     return None  # No compiler found
 
@@ -80,7 +54,7 @@ def get_c_compilers(compiler: CXXCompiler) -> tuple[Path, Path] | None:
 
         if not c_path or not cxx_path:
             continue
-        return (Path(c_path), Path(cxx_path))
+        return (c_compiler, cxx_compiler)
     return None
 
 def clean(out_dir: Path):
@@ -91,9 +65,9 @@ def clean(out_dir: Path):
 
 def compile(out_dir: Path, 
                 config: util.BuildConfig = util.BuildConfig.DEBUG, 
-                compiler: CXXCompiler = CXXCompiler.MSVC,
-                target_platform: util.Platform = util.Platform.NONE,
-                target_arch: util.Architecture = util.Architecture.NONE) -> bool:
+                compiler: CXXCompiler = CXXCompiler.GCC,
+                target_platform: util.Platform = util.Platform.CURRENT,
+                target_arch: util.Architecture = util.Architecture.CURRENT) -> bool:
     """
     Compiles all engine/native code into a out directory for installation
 
@@ -114,19 +88,13 @@ def compile(out_dir: Path,
     
     # Get host platform info
     host_platform, host_arch = util.get_host_platform()
-
-    # Use host platform is we aren't cross compiling (aka no platform is specified)
-    if target_platform == util.Platform.NONE:
-        target_platform = host_platform
-    if target_arch == util.Architecture.NONE:
-        target_arch = host_arch
-
+    
     # Check if we are cross-compiling
     is_cross_compiling = (target_platform != host_platform) or (target_arch != host_arch)
     
     # Get C and CXX compilers for the compiler type
-    if compiler == CXXCompiler.NATIVE:
-        compilers = get_native_compiler(target_platform)
+    if compiler == CXXCompiler.ANY:
+        compilers = get_any_compiler(target_platform)
     else:
         compilers = get_c_compilers(compiler)
 
