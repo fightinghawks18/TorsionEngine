@@ -7,10 +7,4 @@ function(install_library lib lib_name)
         PREFIX ""
         OUTPUT_NAME ${lib_name}
     )
-
-    install(TARGETS ${lib}
-        RUNTIME DESTINATION bin
-        LIBRARY DESTINATION lib
-        ARCHIVE DESTINATION lib
-    )
 endfunction()

@@ -187,15 +187,31 @@ def install(out_dir: Path, to_dir: Path) -> bool:
     Returns:
         bool: True if the installation succeeded, or False if it didn't
     """
-    result = subprocess.run([
-        "cmake",
-        "--install", str(out_dir),
-        "--prefix", str(to_dir)
-    ], capture_output=True, text=True)
 
-    if result.returncode != 0:
-        print(f"CMake failed to install project to {to_dir}, {result.stderr}")
-        return False
-    print(f"CMake successfully installed project to {to_dir}")
+    bin_folder = to_dir / "bin"
+    lib_folder = to_dir / "lib"
+
+    bin_folder.mkdir(parents=True, exist_ok=True)
+    lib_folder.mkdir(parents=True, exist_ok=True)
+    
+    # Copy dynamic and static libraries
+    runtime_extensions = {".dll", ".so", ".dylib"}
+    static_extensions = {".lib", ".a"}
+    for item in out_dir.rglob("*"):
+        if item.is_file():
+            if "vcpkg_installed" in item.parts:
+                continue
+
+            file_type = item.suffix.lower() in runtime_extensions and "runtime" or item.suffix.lower() in static_extensions and "static" or "none"
+            if file_type == "none":
+                continue
+            folder_dest = file_type == "runtime" and bin_folder or lib_folder
+            dest_file = folder_dest / item.name
+            shutil.copy2(item, dest_file)
+            print(f"Installed {file_type} library {item.name} from {item.absolute()} to {to_dir}")
+
+            
+
+    print(f"Successfully installed c++ project to {to_dir}")
     return True
     

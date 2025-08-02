@@ -24,6 +24,7 @@ If you don't know how to add stuff to your path please refer to these links base
         * Windows: 
         * Linux: `sudo apt install clang`
         * MacOS: *Already comes with Clang*
+* **Ninja** [C++ Build Tool] - https://ninja-build.org/
 * **.NET** [Cross-Platform C# Platform] - https://dotnet.microsoft.com/en-us/download
 * **SWIG** [Simplified Wrapper and Interface Generator] - https://www.swig.org/download.html (Needed for C++ -> C#, check the unix note below the windows installation)
 

@@ -1,3 +1,5 @@
+#pragma once
+
 #include <stdexcept>
 #include <string>
 
@@ -33,6 +35,9 @@ namespace TorsionEngine::OS
 	class Window
 	{
 	public:
+		static void Init();
+		static void Quit();
+
 		explicit Window(const WindowSettings& settings);
 		~Window();
 

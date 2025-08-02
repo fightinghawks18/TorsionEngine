@@ -2,6 +2,23 @@
 
 namespace TorsionEngine::OS
 {
+    void Window::Init()
+    {
+        SDL_InitFlags initFlags = SDL_INIT_VIDEO;
+        if (!SDL_WasInit(initFlags))
+        {
+            if (!SDL_Init(initFlags))
+            {
+                throw std::runtime_error("Failed to initialize SDL.");
+            }
+        }
+    }
+
+    void Window::Quit()
+    {
+        SDL_Quit();
+    }
+
     Window::Window(const WindowSettings& settings)
         : _title(settings.title), _width(settings.width),
         _height(settings.height), _x(settings.x), 
@@ -42,10 +59,10 @@ namespace TorsionEngine::OS
 
     void Window::Update()
     {
-        SDL_Event* e;
-        while (SDL_PollEvent(e))
+        SDL_Event e;
+        while (SDL_PollEvent(&e))
         {
-            if (e->type == SDL_EVENT_QUIT)
+            if (e.type == SDL_EVENT_QUIT)
             {
                 SetClose(true);
             }

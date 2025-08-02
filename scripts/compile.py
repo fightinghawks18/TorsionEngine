@@ -74,6 +74,12 @@ def compile():
         vcpkg_build_res = vcpkg.build_packages(vcpkg_triplet)
         if not vcpkg_build_res:
             raise AssertionError("Failed to build vcpkg packages...")
+        
+        # Generate C# bindings from C++
+        print("Generating C# bindings from C++ components...")
+        swig_generation_res = swig.generate_cs_from_swig(util.SWIG_OUT_FOLDER)
+        if not swig_generation_res:
+            raise AssertionError("Failed to generate C# bindings from C++ components...")
 
         # Compile C++ (C# depends on it)
         print("Compiling C++ components...")
@@ -85,12 +91,6 @@ def compile():
             arch)
         if not cxx_compilation_res:
             raise AssertionError("Failed to compile C++ components...")
-
-        # Generate C# bindings from C++
-        print("Generating C# bindings from C++ components...")
-        swig_generation_res = swig.generate_cs_from_swig(util.SWIG_OUT_FOLDER)
-        if not swig_generation_res:
-            raise AssertionError("Failed to generate C# bindings from C++ components...")
     
         # Compile C#
         print("Compiling C# components...")
