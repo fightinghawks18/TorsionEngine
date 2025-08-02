@@ -1,3 +1,4 @@
+import json
 import os
 import platform
 import shutil
@@ -143,6 +144,56 @@ def get_vcpkg_triplet(platform: Platform, arch: Architecture) -> VTriplet:
         case _:
             return VTriplet.NONE
 
+def get_required_packages() -> list[str]:
+    """Read required packages from vcpkg.json
+
+    Returns:
+        list[str]: The list of vcpkg package names (simplified)
+    """
+    vcpkg_json = util.CXXSOURCE_FOLDER / "vcpkg.json"
+    if not vcpkg_json.exists():
+        return []
+    
+    try:
+        with open(vcpkg_json, 'r') as f:
+            data = json.load(f)
+            dependencies = data.get('dependencies', [])
+            
+            # Handle both string dependencies and object dependencies
+            package_names = []
+            for dep in dependencies:
+                if isinstance(dep, str):
+                    package_names.append(dep)
+                elif isinstance(dep, dict) and 'name' in dep:
+                    package_names.append(dep['name'])
+            
+            return package_names
+    except Exception as e:
+        print(f"Error reading vcpkg.json: {e}")
+        return []
+
+def are_packages_installed(triplet: VTriplet) -> bool:
+    """Checks if all packages from vcpkg.json are installed
+
+    Returns:
+        bool: True if the packages are installed, or False if not
+    """
+
+    vcpkg_installed = util.CXXSOURCE_FOLDER / "vcpkg_installed"
+    triplet_dir = vcpkg_installed / triplet.value
+    if not triplet_dir.exists():
+        return False
+    
+    # Check to see if the package is available in either the library or include
+    packages = get_required_packages()
+    for package_name in packages:
+        package_include = triplet_dir / "include" / package_name
+        package_lib = triplet_dir / "lib"
+        
+        if not (package_include.exists() or any(f.name.startswith(package_name) for f in package_lib.glob("*") if f.is_file())):
+            return False
+    return True
+
 
 def build_packages(triplet: VTriplet = VTriplet.NONE) -> bool:
     """Builds vcpkg packages
@@ -165,6 +216,10 @@ def build_packages(triplet: VTriplet = VTriplet.NONE) -> bool:
     if triplet == VTriplet.NONE:
         triplet = host_triplet
 
+    if are_packages_installed(triplet):
+        print("Vcpkg packages are already installed, skipping..")
+        return True
+
     cpu_cores = os.cpu_count()
     if cpu_cores is None:
         print("Unable to query cpu cores for vcpkg, defaulting to 1")
@@ -179,7 +234,6 @@ def build_packages(triplet: VTriplet = VTriplet.NONE) -> bool:
     env["VCPKG_MAX_CONCURRENCY"] = str(cores_used)
 
     # Move to cxx source folder as it has the vcpkg.json
-
     os.chdir(util.CXXSOURCE_FOLDER)
     
     # Build packages
